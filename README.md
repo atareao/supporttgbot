@@ -1,3 +1,3 @@
-# TGMail
+# SupportTGBot
 
-A simple service to recieve and send emails from Telegram
+A bot to give support to atareao.es
