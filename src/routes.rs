@@ -1,5 +1,6 @@
 use actix_web::{get, post, Error, HttpResponse, http::StatusCode, http::header::ContentType};
 use serde::Serialize;
+use serde_json::Value;
 
 #[derive(Serialize)]
 struct Respuesta{
@@ -29,6 +30,10 @@ pub async fn status() -> Result<HttpResponse, Error>{
 #[post("/hook")]
 pub async fn hook(post: String) -> Result<HttpResponse, Error>{
     println!("{}", post);
+    let mut content: Value = serde_json::from_str(&post).unwrap();
+    if let Some(text) = content.get_mut("text"){
+        println!("Texto introducido: {}", &text);
+    }
     Ok(HttpResponse::build(StatusCode::OK).body(format!("Message recieved {}", post)))
 }
 
