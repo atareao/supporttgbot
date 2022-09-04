@@ -1,0 +1,10 @@
+GET https://matterhook.tuservidor.es/
+
+GET https://matterhook.tuservidor.es/status
+
+POST https://matterhook.tuservidor.es/hook
+Content-Type: application/json
+
+{
+    "message": "nada"
+}
