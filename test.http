@@ -1,8 +1,8 @@
-GET https://matterhook.tuservidor.es/
+GET https://attgsup.territoriolinux.es/
 
-GET https://matterhook.tuservidor.es/status
+GET https://attgsup.territoriolinux.es/status
 
-POST https://matterhook.tuservidor.es/hook
+POST https://attgsup.territoriolinux.es/hook
 Content-Type: application/json
 
 {
