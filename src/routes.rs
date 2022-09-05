@@ -1,4 +1,5 @@
 use actix_web::{get, post, Error, HttpResponse, http::StatusCode, http::header::ContentType};
+use sqlx::SqlitePool;
 use serde::Serialize;
 use serde_json::Value;
 
@@ -33,6 +34,8 @@ pub async fn hook(post: String) -> Result<HttpResponse, Error>{
     let mut content: Value = serde_json::from_str(&post).unwrap();
     if let Some(text) = content.get_mut("text"){
         println!("Texto introducido: {}", &text);
+    }else{
+        println!("Desastre");
     }
     Ok(HttpResponse::build(StatusCode::OK).body(format!("Message recieved {}", post)))
 }
