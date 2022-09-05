@@ -32,8 +32,10 @@ pub async fn status() -> Result<HttpResponse, Error>{
 pub async fn hook(post: String) -> Result<HttpResponse, Error>{
     println!("{}", post);
     let mut content: Value = serde_json::from_str(&post).unwrap();
-    if let Some(text) = content.get_mut("text"){
-        println!("Texto introducido: {}", &text);
+    if let Some(message) = content.get_mut("message"){
+        if let Some(text) = message.get_mut("text"){
+            println!("Texto introducido: {}", &text);
+        }
     }else{
         println!("Desastre");
     }

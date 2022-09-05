@@ -3,20 +3,25 @@ mod routes;
 
 use dotenv::dotenv;
 use std::env;
-use sqlx::sqlite::SqlitePoolOptions;
+use sqlx::{sqlite::SqlitePoolOptions, migrate::Migrator};
 use actix_web::{App, HttpServer, web::Data};
 use routes::{root, status, hook};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-    let db_url = env::var("DATABASE_URL").expect("Database not found");
+
+    static MIGRATOR: Migrator = sqlx::migrate!();
+    let db_url = env::var("DATABASE_URL").expect("Database url not found");
     let port = env::var("PORT").expect("Port not found");
     let pool = SqlitePoolOptions::new()
         .max_connections(4)
         .connect(&db_url)
         .await
         .expect("pool failed");
+
+    sqlx::migrate!().run(&pool).await.expect("Can not migrate");
+
     HttpServer::new(move ||{
         App::new()
             .app_data(Data::new(pool.clone()))
