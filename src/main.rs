@@ -3,7 +3,8 @@ mod routes;
 
 use dotenv::dotenv;
 use std::env;
-use sqlx::{sqlite::SqlitePoolOptions, migrate::Migrator};
+use std::path::Path;
+use sqlx::{sqlite::{SqlitePool, SqlitePoolOptions}, migrate::{Migrator, MigrateDatabase}};
 use actix_web::{App, HttpServer, web::Data};
 use routes::{root, status, hook};
 
@@ -11,16 +12,37 @@ use routes::{root, status, hook};
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
-    static MIGRATOR: Migrator = sqlx::migrate!();
-    let db_url = env::var("DATABASE_URL").expect("Database url not found");
-    let port = env::var("PORT").expect("Port not found");
+    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL not set");
+    let port = env::var("PORT").expect("PORT not set");
+
+    if !sqlx::Sqlite::database_exists(&db_url).await.unwrap(){
+        sqlx::Sqlite::create_database(&db_url).await.unwrap()
+    }
+
+
+    // Migrate the database
+    let migrations = if env::var("RUST_ENV") == Ok("production".to_string()) {
+        // Productions migrations dir
+        std::env::current_exe()?.join("./migrations")
+    } else {
+        // Development migrations dir
+        let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+        Path::new(&crate_dir)
+            .join("./migrations")
+    };
+
+    let db = SqlitePool::connect(&db_url).await.unwrap();
+    sqlx::migrate::Migrator::new(migrations)
+        .await.unwrap()
+        .run(&db)
+        .await.unwrap();
+
     let pool = SqlitePoolOptions::new()
         .max_connections(4)
         .connect(&db_url)
         .await
         .expect("pool failed");
-
-    sqlx::migrate!().run(&pool).await.expect("Can not migrate");
+    //sqlx::migrate!().run(&pool).await.expect("Can not migrate");
 
     HttpServer::new(move ||{
         App::new()
