@@ -2,6 +2,7 @@
 CREATE TABLE IF NOT EXISTS feedback(
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     category TEXT NOT NULL,
+    reference TEXT NOT NULL DEFAULT "",
     content TEXT NOT NULL,
     username TEXT NOT NULL DEFAULT "",
     nickname TEXT NOT NULL DEFAULT "",

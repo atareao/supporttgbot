@@ -4,7 +4,7 @@ mod routes;
 use dotenv::dotenv;
 use std::env;
 use std::path::Path;
-use sqlx::{sqlite::{SqlitePool, SqlitePoolOptions}, migrate::{Migrator, MigrateDatabase}};
+use sqlx::{sqlite::SqlitePoolOptions, migrate::{Migrator, MigrateDatabase}};
 use actix_web::{App, HttpServer, web::Data};
 use routes::{root, status, hook};
 
@@ -19,7 +19,6 @@ async fn main() -> std::io::Result<()> {
         sqlx::Sqlite::create_database(&db_url).await.unwrap()
     }
 
-
     // Migrate the database
     let migrations = if env::var("RUST_ENV") == Ok("production".to_string()) {
         // Productions migrations dir
@@ -31,11 +30,7 @@ async fn main() -> std::io::Result<()> {
             .join("./migrations")
     };
 
-    let db = SqlitePool::connect(&db_url).await.unwrap();
-    sqlx::migrate::Migrator::new(migrations)
-        .await.unwrap()
-        .run(&db)
-        .await.unwrap();
+    //let db = SqlitePool::connect(&db_url).await.unwrap();
 
     let pool = SqlitePoolOptions::new()
         .max_connections(4)
@@ -43,6 +38,10 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("pool failed");
     //sqlx::migrate!().run(&pool).await.expect("Can not migrate");
+    Migrator::new(migrations)
+        .await.unwrap()
+        .run(&pool)
+        .await.unwrap();
 
     HttpServer::new(move ||{
         App::new()

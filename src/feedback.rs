@@ -7,6 +7,7 @@ use chrono::{NaiveDateTime, Utc};
 pub struct Feedback{
     pub id: i64,
     pub category: String,
+    pub reference: String,
     pub content: String,
     pub username: String,
     pub nickname: String,
@@ -17,18 +18,19 @@ pub struct Feedback{
 
 impl Feedback {
     pub async fn get(pool: web::Data<SqlitePool>, id: i64) -> Result<Feedback, Error>{
-        let feedback = query_as!(Feedback, r#"SELECT id, category, content, username, nickname, applied, created_at, updated_at FROM feedback WHERE id=$1"#, id)
+        let feedback = query_as!(Feedback, r#"SELECT id, category, reference, content, username, nickname, applied, created_at, updated_at FROM feedback WHERE id=$1"#, id)
             .fetch_one(pool.get_ref())
             .await?;
         Ok(feedback)
     }
-    pub async fn new(pool: web::Data<SqlitePool>, category: &str, content: &str,
+    pub async fn new(pool: web::Data<SqlitePool>, category: &str, reference: &str, content: &str,
             username: &str, nickname: &str) -> Result<Feedback, Error>{
         let applied:i64 = 0;
         let created_at = Utc::now().naive_utc();
         let updated_at = Utc::now().naive_utc();
         let id = query("INSERT INTO feedback (category, content, username, nickname, applied, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?);")
             .bind(category)
+            .bind(reference)
             .bind(content)
             .bind(username)
             .bind(nickname)
