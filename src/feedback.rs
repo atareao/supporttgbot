@@ -1,5 +1,5 @@
-use actix_web::web;
-use sqlx::{sqlite::{SqlitePool, SqliteQueryResult}, query, query_as, FromRow, Error};
+use actix_web::{web, HttpRequest};
+use sqlx::{sqlite::SqlitePool, query, query_as, FromRow, Error};
 use serde::{Serialize, Deserialize};
 use chrono::{NaiveDateTime, Utc};
 
@@ -17,14 +17,22 @@ pub struct Feedback{
 }
 
 impl Feedback {
+    pub async fn all(req: HttpRequest, pool: web::Data<SqlitePool>) -> Result<Vec<Feedback>, Error>{
+            query_as!(Feedback, r#" SELECT id, category, reference, content, username, nickname, applied, created_at, updated_at FROM feedback"#)
+            .fetch_all(pool.get_ref())
+            .await
+        }
+
     pub async fn get(pool: web::Data<SqlitePool>, id: i64) -> Result<Feedback, Error>{
         let feedback = query_as!(Feedback, r#"SELECT id, category, reference, content, username, nickname, applied, created_at, updated_at FROM feedback WHERE id=$1"#, id)
             .fetch_one(pool.get_ref())
             .await?;
         Ok(feedback)
     }
-    pub async fn new(pool: web::Data<SqlitePool>, category: &str, reference: &str, content: &str,
-            username: &str, nickname: &str) -> Result<Feedback, Error>{
+
+    pub async fn new(pool: web::Data<SqlitePool>, category: &str,
+            reference: &str, content: &str, username: &str,
+            nickname: &str) -> Result<Feedback, Error>{
         let applied:i64 = 0;
         let created_at = Utc::now().naive_utc();
         let updated_at = Utc::now().naive_utc();

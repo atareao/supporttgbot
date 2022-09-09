@@ -1,7 +1,11 @@
-use actix_web::{get, post, Error, HttpResponse, http::StatusCode, http::header::ContentType};
-use sqlx::SqlitePool;
+use actix_web::{get, post, web, Error, HttpResponse, http::StatusCode,
+                http::header::ContentType, HttpRequest,
+                error::ErrorBadRequest};
 use serde::Serialize;
 use serde_json::Value;
+use sqlx::sqlite::SqlitePool;
+
+use crate::feedback::Feedback;
 
 #[derive(Serialize)]
 struct Respuesta{
@@ -14,6 +18,14 @@ struct Respuesta{
 #[get("/")]
 pub async fn root() -> Result<HttpResponse, Error>{
     Ok(HttpResponse::build(StatusCode::OK).body("Rust is the best!"))
+}
+
+#[get("/feedback")]
+pub async fn get_all_feedback(req: HttpRequest, pool: web::Data<SqlitePool>) -> Result<HttpResponse, Error>{
+    Feedback::all(req, pool)
+        .await
+        .map(|some_notes| HttpResponse::Ok().json(some_notes))
+        .map_err(|_| ErrorBadRequest("Not found"))
 }
 
 #[get("/status")]
