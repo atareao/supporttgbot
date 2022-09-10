@@ -9,12 +9,23 @@ Content-Type: application/json
     "messrge": "nada"
 }
 
-POST http://localhost:8080/feedback
+POST http://localhost:8080/feedback/8
 Content-Type: application/json
 
 {
-    "category": "nada",
+    "category": "nada1",
     "content": "este"
+}
+
+GET http://localhost:8080/feedback/8
+Content-Type: application/json
+
+PUT http://localhost:8080/feedback/8
+Content-Type: application/json
+
+{
+    "category": "nada1",
+    "content": "o este"
 }
 
 GET http://localhost:8080/feedback

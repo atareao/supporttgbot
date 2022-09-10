@@ -1,4 +1,4 @@
-use actix_web::{get, post, delete, web, Error, HttpResponse, http::StatusCode,
+use actix_web::{get, post, put, delete, web, Error, HttpResponse, http::StatusCode,
                 http::header::ContentType, HttpRequest,
                 error::{ErrorBadRequest, ErrorNotFound}};
 use serde::Serialize;
@@ -20,9 +20,14 @@ impl Respuesta {
             status: if code < 300 {"OK".to_string()} else {"KO".to_string()},
             content,
         };
-        return Ok(HttpResponse::BadRequest()
-            .content_type(ContentType::json())
-            .body(serde_json::to_string(&respuesta)?));
+        match code{
+            0 ..= 299 => Ok(HttpResponse::Ok()
+                .content_type(ContentType::json())
+                .body(serde_json::to_string(&respuesta)?)),
+            _ => Ok(HttpResponse::BadRequest()
+                .content_type(ContentType::json())
+                .body(serde_json::to_string(&respuesta)?)),
+        }
     }
 
     fn simple(code: i32, message: &str) -> Result<HttpResponse, Error>{
@@ -68,14 +73,11 @@ pub async fn delete_one_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
     }
 }
 
-#[post("/feedback")]
-pub async fn create_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
-        post: String) -> Result<HttpResponse, Error>{
+#[put("/feedback/{id}")]
+pub async fn update_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
+        path_id: web::Path<i64>, post: String) -> Result<HttpResponse, Error>{
+    let id = path_id.into_inner();
     let mut post_content: Value = serde_json::from_str(&post).unwrap();
-    let id = match &post_content.get_mut("id") {
-        Some(value) => value.as_i64().unwrap(),
-        None => -1,
-    };
     let category = match post_content.get_mut("category") {
         Some(value) => value.as_str().unwrap().to_string(),
         None => return Respuesta::simple(400, "Bad request!, category is mandatory")
@@ -101,18 +103,47 @@ pub async fn create_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
         None => 0,
     };
 
-    match id {
-        -1 => match Feedback::new_from(&pool, &category, &reference, &content, &username, &nickname, applied)
-                .await{
-                    Ok(feedback) => Respuesta::new(200, serde_json::to_value(feedback).unwrap()),
-                    Err(_) => Respuesta::simple(400, "Bad request"),
-            },
-        _ => match Feedback::update_from(&pool, id, &category, &reference, &content, &username, &nickname, applied)
-                .await{
-                    Ok(feedback) => Respuesta::new(200, serde_json::to_value(feedback).unwrap()),
-                    Err(_) => Respuesta::simple(400, "Bad request"),
-            },
-    }
+    match Feedback::update_from(&pool, id, &category, &reference, &content, &username, &nickname, applied)
+        .await{
+            Ok(feedback) => Respuesta::new(200, serde_json::to_value(feedback).unwrap()),
+            Err(_) => Respuesta::simple(400, "Bad request"),
+        }
+}
+
+#[post("/feedback")]
+pub async fn create_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
+        post: String) -> Result<HttpResponse, Error>{
+    let mut post_content: Value = serde_json::from_str(&post).unwrap();
+    let category = match post_content.get_mut("category") {
+        Some(value) => value.as_str().unwrap().to_string(),
+        None => return Respuesta::simple(400, "Bad request!, category is mandatory")
+    };
+    let reference = match post_content.get_mut("reference") {
+        Some(value) => value.as_str().unwrap().to_string(),
+        None => "".to_string(),
+    };
+    let content = match post_content.get_mut("content") {
+        Some(value) => value.as_str().unwrap().to_string(),
+        None => return Respuesta::simple(400, "Bad request!, content is mandatory")
+    };
+    let username = match post_content.get_mut("username") {
+        Some(value) => value.as_str().unwrap().to_string(),
+        None => "".to_string(),
+    };
+    let nickname = match post_content.get_mut("nickname") {
+        Some(value) => value.as_str().unwrap().to_string(),
+        None => "".to_string(),
+    };
+    let applied = match post_content.get_mut("applied") {
+        Some(value) => value.as_i64().unwrap(),
+        None => 0,
+    };
+
+    match Feedback::new_from(&pool, &category, &reference, &content, &username, &nickname, applied)
+        .await{
+            Ok(feedback) => Respuesta::new(200, serde_json::to_value(feedback).unwrap()),
+            Err(_) => Respuesta::simple(400, "Bad request"),
+        }
 }
 
 #[get("/status")]

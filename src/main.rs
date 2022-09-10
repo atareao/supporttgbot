@@ -6,7 +6,7 @@ use std::env;
 use std::path::Path;
 use sqlx::{sqlite::SqlitePoolOptions, migrate::{Migrator, MigrateDatabase}};
 use actix_web::{App, HttpServer, web::Data};
-use routes::{root, status, hook, get_all_feedback, read_one_feedback, create_feedback};
+use routes::{root, status, hook, get_all_feedback, read_one_feedback, create_feedback, update_feedback};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -49,6 +49,7 @@ async fn main() -> std::io::Result<()> {
             .service(get_all_feedback)
             .service(read_one_feedback)
             .service(create_feedback)
+            .service(update_feedback)
             .service(hook)
     })
         .bind(format!("0.0.0.0:{}", &port))
