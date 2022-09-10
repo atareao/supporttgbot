@@ -1,4 +1,4 @@
-use actix_web::{get, post, web, Error, HttpResponse, http::StatusCode,
+use actix_web::{get, post, delete, web, Error, HttpResponse, http::StatusCode,
                 http::header::ContentType, HttpRequest,
                 error::{ErrorBadRequest, ErrorNotFound}};
 use serde::Serialize;
@@ -39,25 +39,43 @@ pub async fn root() -> Result<HttpResponse, Error>{
 
 #[get("/feedback")]
 pub async fn get_all_feedback(req: HttpRequest, pool: web::Data<SqlitePool>) -> Result<HttpResponse, Error>{
-    Feedback::all(pool)
+    Feedback::read_all(pool)
         .await
         .map(|some_notes| HttpResponse::Ok().json(some_notes))
         .map_err(|_| ErrorBadRequest("Not found"))
 }
 
 #[get("/feedback/{id}")]
-pub async fn read_one_feedback(req: HttpRequest, pool: web::Data<SqlitePool>, path_id: web::Path<i64>) -> Result<HttpResponse, Error>{
+pub async fn read_one_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
+        path_id: web::Path<i64>) -> Result<HttpResponse, Error>{
     let id = path_id.into_inner();
-    match Feedback::get(pool, id).await{
-        Ok(feedback) => Respuesta::new(200, serde_json::to_value(feedback).unwrap()),
+    match Feedback::read(&pool, id).await{
+        Ok(feedback) => Respuesta::new(200,serde_json::to_value(feedback).unwrap()),
         Err(_) => Respuesta::simple(400, &format!("Feedback {} not found", id)),
     }
 }
 
+#[delete("/feedback/{id}")]
+pub async fn delete_one_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
+        path_id: web::Path<i64>) -> Result<HttpResponse, Error>{
+    let id = path_id.into_inner();
+    match Feedback::read(&pool, id).await{
+        Ok(feedback) => {
+            feedback.delete(&pool).await.unwrap();
+            Respuesta::new(200,serde_json::to_value(feedback).unwrap())
+        },
+        Err(_) => Respuesta::simple(400, &format!("Feedback {} not found", id)),
+    }
+}
 
 #[post("/feedback")]
-pub async fn create_feedback(req: HttpRequest, pool: web::Data<SqlitePool>, post: String) -> Result<HttpResponse, Error>{
+pub async fn create_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
+        post: String) -> Result<HttpResponse, Error>{
     let mut post_content: Value = serde_json::from_str(&post).unwrap();
+    let id = match &post_content.get_mut("id") {
+        Some(value) => value.as_i64().unwrap(),
+        None => -1,
+    };
     let category = match post_content.get_mut("category") {
         Some(value) => value.as_str().unwrap().to_string(),
         None => return Respuesta::simple(400, "Bad request!, category is mandatory")
@@ -78,10 +96,23 @@ pub async fn create_feedback(req: HttpRequest, pool: web::Data<SqlitePool>, post
         Some(value) => value.as_str().unwrap().to_string(),
         None => "".to_string(),
     };
-    Feedback::new(pool, &category, &reference, &content, &username, &nickname)
-        .await
-        .map(|feedback| HttpResponse::Ok().json(feedback))
-       .map_err(|_| ErrorNotFound("Not found"))
+    let applied = match post_content.get_mut("applied") {
+        Some(value) => value.as_i64().unwrap(),
+        None => 0,
+    };
+
+    match id {
+        -1 => match Feedback::new_from(&pool, &category, &reference, &content, &username, &nickname, applied)
+                .await{
+                    Ok(feedback) => Respuesta::new(200, serde_json::to_value(feedback).unwrap()),
+                    Err(_) => Respuesta::simple(400, "Bad request"),
+            },
+        _ => match Feedback::update_from(&pool, id, &category, &reference, &content, &username, &nickname, applied)
+                .await{
+                    Ok(feedback) => Respuesta::new(200, serde_json::to_value(feedback).unwrap()),
+                    Err(_) => Respuesta::simple(400, "Bad request"),
+            },
+    }
 }
 
 #[get("/status")]

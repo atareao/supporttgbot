@@ -30,14 +30,12 @@ async fn main() -> std::io::Result<()> {
             .join("./migrations")
     };
 
-    //let db = SqlitePool::connect(&db_url).await.unwrap();
-
     let pool = SqlitePoolOptions::new()
         .max_connections(4)
         .connect(&db_url)
         .await
         .expect("pool failed");
-    //sqlx::migrate!().run(&pool).await.expect("Can not migrate");
+
     Migrator::new(migrations)
         .await.unwrap()
         .run(&pool)
