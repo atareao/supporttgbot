@@ -17,7 +17,7 @@ pub struct Feedback{
 }
 
 impl Feedback {
-    pub async fn all(req: HttpRequest, pool: web::Data<SqlitePool>) -> Result<Vec<Feedback>, Error>{
+    pub async fn all(pool: web::Data<SqlitePool>) -> Result<Vec<Feedback>, Error>{
             query_as!(Feedback, r#" SELECT id, category, reference, content, username, nickname, applied, created_at, updated_at FROM feedback"#)
             .fetch_all(pool.get_ref())
             .await
@@ -35,8 +35,8 @@ impl Feedback {
             nickname: &str) -> Result<Feedback, Error>{
         let applied:i64 = 0;
         let created_at = Utc::now().naive_utc();
-        let updated_at = Utc::now().naive_utc();
-        let id = query("INSERT INTO feedback (category, content, username, nickname, applied, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?);")
+        let updated_at = &created_at;
+        let id = query("INSERT INTO feedback (category, reference, content, username, nickname, applied, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?);")
             .bind(category)
             .bind(reference)
             .bind(content)

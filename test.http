@@ -6,5 +6,19 @@ POST https://attgsup.territoriolinux.es/hook
 Content-Type: application/json
 
 {
-    "message": "nada"
+    "messrge": "nada"
 }
+
+POST http://localhost:8080/feedback
+Content-Type: application/json
+
+{
+    "category": "nada",
+    "content": "este"
+}
+
+GET http://localhost:8080/feedback
+Content-Type: application/json
+
+GET http://localhost:8080/feedback/8
+Content-Type: application/json
