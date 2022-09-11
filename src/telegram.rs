@@ -1,8 +1,8 @@
 use reqwest::Client;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::env;
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Message{
     chat_id: i64,
     text: String,
@@ -22,12 +22,19 @@ pub async fn send_message(chat_id: i64, text: &str) -> Option<String>{
     let token = env::var("TG_TOKEN").expect("TG_TOKEN not set");
     let url = format!("https://api.telegram.org/bot{}/sendMessage", token);
     let message = Message::new(chat_id, text);
-    let client = Client::new();
-    match client.post(url)
-        .body(serde_json::to_string(&message).unwrap())
+    println!("{}", serde_json::to_string(&message).unwrap());
+    match Client::new()
+        .post(url)
+        .json(&message)
         .send()
         .await{
-            Ok(response) => Some(response.status().to_string()),
-            Err(_) => None,
+            Ok(response) => {
+                println!("Mensaje envíado: {}", response.status().to_string());
+                Some(response.status().to_string())
+            },
+            Err(error) => {
+                println!("No he podido enviar el mensaje: {}",error.to_string());
+                None
+            },
         }
 }
