@@ -8,6 +8,7 @@ authors = ["Lorenzo Carbonell <lorenzo.carbonell.cerezo@gmail.com>"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+regex = "1"
 sqlx = { version = "0.5", features = ["runtime-actix-rustls", "sqlite", "macros", "offline", "chrono"]}
 actix-web = "4"
 serde = { version = "1.0", features = ["derive"] }

@@ -1,5 +1,7 @@
 GET https://attgsup.territoriolinux.es/
 
+GET https://attgsup.territoriolinux.es/feedback
+
 GET https://attgsup.territoriolinux.es/status
 
 POST https://attgsup.territoriolinux.es/hook
@@ -7,6 +9,22 @@ Content-Type: application/json
 
 {
     "messrge": "nada"
+}
+
+PUT https://attgsup.territoriolinux.es/feedback/2
+Content-Type: application/json
+
+{
+    "category": "categoría",
+    "content": "vacio"
+}
+
+POST https://attgsup.territoriolinux.es/feedback
+Content-Type: application/json
+
+{
+    "category": "nada",
+    "content": "vacio"
 }
 
 POST http://localhost:8080/feedback/8
