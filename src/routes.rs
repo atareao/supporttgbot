@@ -5,7 +5,8 @@ use serde::Serialize;
 use serde_json::{Value, json};
 use sqlx::sqlite::SqlitePool;
 
-use crate::{feedback::Feedback, message::{check_key, get_user, check_comment, get_chat_id}, telegram::send_message};
+use crate::{feedback::Feedback, message::{check_key, get_user, check_comment,
+    command, get_chat_id}, telegram::send_message};
 
 #[derive(Serialize)]
 struct Respuesta{
@@ -159,18 +160,21 @@ pub async fn hook(req: HttpRequest, pool: web::Data<SqlitePool>, post: String) -
         let (name, nick) = get_user(message);
         let user = if !nick.is_empty() {format!("@{}", nick)} else {name.clone()};
         let option_chat_id = get_chat_id(message);
-        match check_key("ayuda", message){
-            Some(_) => {
-                let text = "Ayuda:
-/idea <contenido de la idea>
-/pregunta <contenido de la pregunta>
-/comentario <número de podcast> <contenido del comentario>
+        if command("ayuda", message){
+            let text = "Ayuda:
+¿Como colaborar con tus ideas, preguntas y comentarios?
+
+Utilizando `hastags` (#),
+
+* Para sugerir una idea, utiliza `#idea`. Por ejemplo, `#idea esta  es una buena idea`
+* En el caso de que quieras hacer una pregunta para los capítulos de preguntas y respuestas, utiliza `#pregunta`. Por ejemplo `¿Cuanto duermes? #pregunta`
+* Si lo que quieres es hacer un comentario a un podcast utiliza `#comentario`. Por ejemplo `#comentario 123 me gusta`. Este comentario en concreto irá al podcast número 123
+
+Indicarte que `#idea`, `#pregunta`, `#comentario` no tienen que ir necesariamenta al principio o al final del mensaje, pueden ir donde tu quieras.
 ";
-                if let Some(chat_id) = option_chat_id{
-                    send_message(chat_id, text).await;
-                }
-            },
-            None => {},
+            if let Some(chat_id) = option_chat_id{
+                send_message(chat_id, text).await;
+            }
         };
         match check_key("idea", message){
             Some(content) => {
