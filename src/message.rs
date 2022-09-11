@@ -50,8 +50,8 @@ pub fn get_user(message: &mut Value) -> (String, String){
         if let Some(first_name) = from.get_mut("first_name"){
             name = first_name.as_str().unwrap().to_string();
         }
-        if let Some(nickname) = from.get_mut("nickname"){
-            nick = nickname.as_str().unwrap().to_string();
+        if let Some(username) = from.get_mut("username"){
+            nick = username.as_str().unwrap().to_string();
         }
     }
     (name, nick)
