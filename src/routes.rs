@@ -4,7 +4,6 @@ use actix_web::{get, post, put, delete, web, Error, HttpResponse, http::StatusCo
 use serde::Serialize;
 use serde_json::{Value, json};
 use sqlx::sqlite::SqlitePool;
-use regex::Regex;
 
 use crate::{feedback::Feedback, message::{check_key, get_user, check_comment, get_chat_id}, telegram::send_message};
 
@@ -160,9 +159,27 @@ pub async fn hook(req: HttpRequest, pool: web::Data<SqlitePool>, post: String) -
         let (name, nick) = get_user(message);
         let user = if !nick.is_empty() {format!("@{}", nick)} else {name.clone()};
         let option_chat_id = get_chat_id(message);
+        match check_key("ayuda", message){
+            Some(_) => {
+                let text = "Ayuda:
+/idea <contenido de la idea>
+/pregunta <contenido de la pregunta>
+/comentario <número de podcast> <contenido del comentario>
+";
+                if let Some(chat_id) = option_chat_id{
+                    send_message(chat_id, text).await;
+                }
+            },
+            None => {},
+        };
         match check_key("idea", message){
             Some(content) => {
-                if &content != "" {
+                if &content == ""{
+                    if let Some(chat_id) = option_chat_id{
+                        let text = format!("Tienes que escribir `/idea` seguido del contenido, {}", user);
+                        send_message(chat_id, &text).await;
+                    }
+                }else{
                     match Feedback::new_from(&pool, "idea", "", &content, &name, &nick, 0).await{
                         Ok(_) => {
                             if let Some(chat_id) = option_chat_id{
@@ -172,7 +189,7 @@ pub async fn hook(req: HttpRequest, pool: web::Data<SqlitePool>, post: String) -
                         },
                         Err(_) => {
                             if let Some(chat_id) = option_chat_id{
-                                let text = format!("Lo siento {}, no he podido registrar tu idea. Mira que está pasando @atareao", user);
+                                let text = format!("Lo siento {}, no he podido registrar tu idea. Mira que está pasando @atareao!", user);
                                 send_message(chat_id, &text).await;
                             }
 
@@ -184,7 +201,12 @@ pub async fn hook(req: HttpRequest, pool: web::Data<SqlitePool>, post: String) -
         }
         match check_key("pregunta", message){
             Some(content) => {
-                if &content != "" {
+                if &content == ""{
+                    if let Some(chat_id) = option_chat_id{
+                        let text = format!("Tienes que escribir `/pregunta` seguido del contenido, {}", user);
+                        send_message(chat_id, &text).await;
+                    }
+                } else {
                     match Feedback::new_from(&pool, "pregunta", "", &content, &name, &nick, 0).await{
                         Ok(_) => {
                             if let Some(chat_id) = option_chat_id{
@@ -194,7 +216,7 @@ pub async fn hook(req: HttpRequest, pool: web::Data<SqlitePool>, post: String) -
                         },
                         Err(_) => {
                             if let Some(chat_id) = option_chat_id{
-                                let text = format!("Lo siento {}, no he podido registrar tu pregunta. Mira que está pasando @atareao", user);
+                                let text = format!("Lo siento {}, no he podido registrar tu pregunta. Mira que está pasando @atareao!", user);
                                 send_message(chat_id, &text).await;
                             }
 
@@ -217,8 +239,19 @@ pub async fn hook(req: HttpRequest, pool: web::Data<SqlitePool>, post: String) -
 
                 if &comentario != ""{
                     match Feedback::new_from(&pool, "comentario", &referencia, &comentario, &name, &nick, 0).await{
-                        Ok(_) => {},
-                        Err(_) => {},
+                        Ok(_) => {
+                            if let Some(chat_id) = option_chat_id{
+                                let text = format!("Muchas gracias por tu comentario {}", user);
+                                send_message(chat_id, &text).await;
+                            }
+                        },
+                        Err(_) => {
+                            if let Some(chat_id) = option_chat_id{
+                                let text = format!("Lo siento {}, no he podido registrar tu comentario. Mira que está pasando @atareao!", user);
+                                send_message(chat_id, &text).await;
+                            }
+
+                        },
                     }
                 }
             },
