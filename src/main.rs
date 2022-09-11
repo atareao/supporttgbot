@@ -1,6 +1,7 @@
 mod message;
 mod feedback;
 mod routes;
+mod telegram;
 
 use dotenv::dotenv;
 use std::env;

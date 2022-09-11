@@ -6,7 +6,7 @@ use serde_json::{Value, json};
 use sqlx::sqlite::SqlitePool;
 use regex::Regex;
 
-use crate::{feedback::Feedback, message::{check_key, get_user, check_comment}};
+use crate::{feedback::Feedback, message::{check_key, get_user, check_comment, get_chat_id}, telegram::send_message};
 
 #[derive(Serialize)]
 struct Respuesta{
@@ -158,12 +158,25 @@ pub async fn hook(req: HttpRequest, pool: web::Data<SqlitePool>, post: String) -
     let mut content: Value = serde_json::from_str(&post).unwrap();
     if let Some(message) = content.get_mut("message"){
         let (name, nick) = get_user(message);
+        let user = if !nick.is_empty() {format!("@{}", nick)} else {name.clone()};
+        let option_chat_id = get_chat_id(message);
         match check_key("idea", message){
             Some(content) => {
                 if &content != "" {
                     match Feedback::new_from(&pool, "idea", "", &content, &name, &nick, 0).await{
-                        Ok(_) => {},
-                        Err(_) => {},
+                        Ok(_) => {
+                            if let Some(chat_id) = option_chat_id{
+                                let text = format!("Muchas gracias por compartir tu idea {}", user);
+                                send_message(chat_id, &text).await;
+                            }
+                        },
+                        Err(_) => {
+                            if let Some(chat_id) = option_chat_id{
+                                let text = format!("Lo siento {}, no he podido registrar tu idea. Mira que está pasando @atareao", user);
+                                send_message(chat_id, &text).await;
+                            }
+
+                        },
                     }
                 }
             },
@@ -173,14 +186,25 @@ pub async fn hook(req: HttpRequest, pool: web::Data<SqlitePool>, post: String) -
             Some(content) => {
                 if &content != "" {
                     match Feedback::new_from(&pool, "pregunta", "", &content, &name, &nick, 0).await{
-                        Ok(_) => {},
-                        Err(_) => {},
+                        Ok(_) => {
+                            if let Some(chat_id) = option_chat_id{
+                                let text = format!("Muchas gracias por tu pregunta {}", user);
+                                send_message(chat_id, &text).await;
+                            }
+                        },
+                        Err(_) => {
+                            if let Some(chat_id) = option_chat_id{
+                                let text = format!("Lo siento {}, no he podido registrar tu pregunta. Mira que está pasando @atareao", user);
+                                send_message(chat_id, &text).await;
+                            }
+
+                        },
                     }
                 }
             },
             None => {},
         }
-        match check_comment("commentario", message){
+        match check_comment("comentario", message){
             Some((refer, comment)) => {
                 let referencia = match refer{
                     Some(refer) => refer,
