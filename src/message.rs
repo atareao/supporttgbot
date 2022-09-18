@@ -34,6 +34,19 @@ pub fn check_comment(key: &str, message: &mut Value) -> Option<(Option<String>, 
                 None => Some((None, Some(content.to_string()))),
             };
         }
+    }else if let Some(text) = message.get_mut("caption"){
+        let content = text.as_str().unwrap();
+        if content.contains(&format!(r#"#{}"#, key)){
+            let patron = format!(r#"#{}\s+(\d*)"#, key);
+            let re = Regex::new(&patron).unwrap();
+            return match re.captures(content) {
+                Some(captures) => {
+                    let referencia = captures.get(1).unwrap().as_str().to_string();
+                    Some((Some(referencia), Some(content.to_string())))
+                },
+                None => Some((None, Some(content.to_string()))),
+            };
+        }
     }
     None
 }
