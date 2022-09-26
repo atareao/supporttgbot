@@ -12,6 +12,7 @@ pub struct Feedback{
     pub username: String,
     pub nickname: String,
     pub applied: i64,
+    pub source: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }
@@ -26,6 +27,7 @@ impl Feedback {
             content: "".to_string(),
             username: "".to_string(),
             nickname: "".to_string(),
+            source: "".to_string(),
             applied: 0,
             created_at: timestamp,
             updated_at: timestamp,
@@ -34,15 +36,16 @@ impl Feedback {
 
     pub async fn new_from(pool: &web::Data<SqlitePool>, category: &str,
             reference: &str, content: &str, username: &str, nickname: &str,
-            applied: i64) -> Result<Feedback, Error>{
+            applied: i64, source: &str) -> Result<Feedback, Error>{
         let timestamp = Utc::now().naive_utc();
-        let id = query("INSERT INTO feedback (category, reference, content, username, nickname, applied, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?);")
+        let id = query("INSERT INTO feedback (category, reference, content, username, nickname, applied, source, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);")
             .bind(category)
             .bind(reference)
             .bind(content)
             .bind(username)
             .bind(nickname)
             .bind(applied)
+            .bind(source)
             .bind(timestamp)
             .bind(timestamp)
             .execute(pool.get_ref())
@@ -53,15 +56,16 @@ impl Feedback {
 
     pub async fn update_from(pool: &web::Data<SqlitePool>, id: i64,
             category: &str, reference: &str, content: &str, username: &str,
-            nickname: &str, applied: i64) -> Result<Feedback, Error>{
+            nickname: &str, applied: i64, source: &str) -> Result<Feedback, Error>{
         let updated_at = Utc::now().naive_utc();
-        query(r#"UPDATE feedback SET category=?, reference=?, content=?, username=?, nickname=?, applied=?, updated_at=? WHERE id=?"#)
+        query(r#"UPDATE feedback SET category=?, reference=?, content=?, username=?, nickname=?, applied=?, source=?, updated_at=? WHERE id=?"#)
             .bind(category)
             .bind(reference)
             .bind(content)
             .bind(username)
             .bind(nickname)
             .bind(applied)
+            .bind(source)
             .bind(updated_at)
             .bind(id)
             .execute(pool.get_ref())
@@ -80,7 +84,7 @@ impl Feedback {
         Ok(false)
     }
     pub async fn load(pool: &web::Data<SqlitePool>, id: i64) -> Result<Self, Error>{
-        query_as!(Feedback, r#"SELECT id, category, reference, content, username, nickname, applied, created_at, updated_at FROM feedback WHERE id=$1"#, id)
+        query_as!(Feedback, r#"SELECT id, category, reference, content, username, nickname, applied, source, created_at, updated_at FROM feedback WHERE id=$1"#, id)
             .fetch_one(pool.get_ref())
             .await
     }
@@ -88,26 +92,28 @@ impl Feedback {
     pub async fn save(&mut self, pool: &web::Data<SqlitePool>) -> Result<bool, Error>{
         if self.id > -1{
             self.updated_at = Utc::now().naive_utc();
-            query(r#"UPDATE feedback SET category=?, reference=?, content=?, username=?, nickname=?, applied=?, updated_at=? WHERE id=?"#)
+            query(r#"UPDATE feedback SET category=?, reference=?, content=?, username=?, nickname=?, applied=?, source=?, updated_at=? WHERE id=?"#)
                 .bind(&self.category)
                 .bind(&self.reference)
                 .bind(&self.content)
                 .bind(&self.username)
                 .bind(&self.nickname)
                 .bind(&self.applied)
+                .bind(&self.source)
                 .bind(&self.updated_at)
                 .execute(pool.get_ref())
                 .await?;
         }else{
             self.created_at = Utc::now().naive_utc();
             self.updated_at = self.created_at;
-            self.id = query("INSERT INTO feedback (category, reference, content, username, nickname, applied, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?);")
+            self.id = query("INSERT INTO feedback (category, reference, content, username, nickname, applied, source, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?);")
                 .bind(&self.category)
                 .bind(&self.reference)
                 .bind(&self.content)
                 .bind(&self.username)
                 .bind(&self.nickname)
                 .bind(&self.applied)
+                .bind(&self.source)
                 .bind(&self.created_at)
                 .bind(&self.updated_at)
                 .execute(pool.get_ref())
@@ -119,17 +125,18 @@ impl Feedback {
 
     pub async fn create(pool: web::Data<SqlitePool>, category: &str,
             reference: &str, content: &str, username: &str,
-            nickname: &str) -> Result<Feedback, Error>{
+            nickname: &str, source: &str) -> Result<Feedback, Error>{
         let applied:i64 = 0;
         let created_at = Utc::now().naive_utc();
         let updated_at = &created_at;
-        let id = query("INSERT INTO feedback (category, reference, content, username, nickname, applied, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?);")
+        let id = query("INSERT INTO feedback (category, reference, content, username, nickname, applied, source, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?);")
             .bind(category)
             .bind(reference)
             .bind(content)
             .bind(username)
             .bind(nickname)
             .bind(applied)
+            .bind(source)
             .bind(created_at)
             .bind(updated_at)
             .execute(pool.get_ref())
@@ -139,14 +146,14 @@ impl Feedback {
     }
 
     pub async fn read(pool: &web::Data<SqlitePool>, id: i64) -> Result<Feedback, Error>{
-        let feedback = query_as!(Feedback, r#"SELECT id, category, reference, content, username, nickname, applied, created_at, updated_at FROM feedback WHERE id=$1"#, id)
+        let feedback = query_as!(Feedback, r#"SELECT id, category, reference, content, username, nickname, applied, source, created_at, updated_at FROM feedback WHERE id=$1"#, id)
             .fetch_one(pool.get_ref())
             .await?;
         Ok(feedback)
     }
 
     pub async fn read_all(pool: web::Data<SqlitePool>) -> Result<Vec<Feedback>, Error>{
-            query_as!(Feedback, r#" SELECT id, category, reference, content, username, nickname, applied, created_at, updated_at FROM feedback"#)
+            query_as!(Feedback, r#" SELECT id, category, reference, content, username, nickname, applied, source, created_at, updated_at FROM feedback"#)
             .fetch_all(pool.get_ref())
             .await
     }

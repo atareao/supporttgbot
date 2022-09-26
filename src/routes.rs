@@ -103,8 +103,12 @@ pub async fn update_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
         Some(value) => value.as_i64().unwrap(),
         None => 0,
     };
+    let source = match post_content.get_mut("source") {
+        Some(value) => value.as_str().unwrap().to_string(),
+        None => "".to_string(),
+    };
 
-    match Feedback::update_from(&pool, id, &category, &reference, &content, &username, &nickname, applied)
+    match Feedback::update_from(&pool, id, &category, &reference, &content, &username, &nickname, applied, &source)
         .await{
             Ok(feedback) => Respuesta::new(200, serde_json::to_value(feedback).unwrap()),
             Err(_) => Respuesta::simple(400, "Bad request"),
@@ -139,8 +143,12 @@ pub async fn create_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
         Some(value) => value.as_i64().unwrap(),
         None => 0,
     };
+    let source = match post_content.get_mut("source") {
+        Some(value) => value.as_str().unwrap().to_string(),
+        None => "".to_string(),
+    };
 
-    match Feedback::new_from(&pool, &category, &reference, &content, &username, &nickname, applied)
+    match Feedback::new_from(&pool, &category, &reference, &content, &username, &nickname, applied, &source)
         .await{
             Ok(feedback) => Respuesta::new(200, serde_json::to_value(feedback).unwrap()),
             Err(_) => Respuesta::simple(400, "Bad request"),
@@ -167,7 +175,9 @@ pub async fn hook(req: HttpRequest, pool: web::Data<SqlitePool>, post: String) -
 Utilizando `hastags` (#),
 
 * Para sugerir una idea, utiliza `#idea`. Por ejemplo, `#idea esta  es una buena idea`
+
 * En el caso de que quieras hacer una pregunta para los capítulos de preguntas y respuestas, utiliza `#pregunta`. Por ejemplo `¿Cuanto duermes? #pregunta`
+
 * Si lo que quieres es hacer un comentario a un podcast utiliza `#comentario`. Por ejemplo `#comentario 123 me gusta`. Este comentario en concreto irá al podcast número 123
 
 Indicarte que `#idea`, `#pregunta`, `#comentario` no tienen que ir necesariamenta al principio o al final del mensaje, pueden ir donde tu quieras.
@@ -184,7 +194,7 @@ Indicarte que `#idea`, `#pregunta`, `#comentario` no tienen que ir necesariament
                         send_message(chat_id, &text).await;
                     }
                 }else{
-                    match Feedback::new_from(&pool, "idea", "", &content, &name, &nick, 0).await{
+                    match Feedback::new_from(&pool, "idea", "", &content, &name, &nick, 0, "Telegram").await{
                         Ok(_) => {
                             if let Some(chat_id) = option_chat_id{
                                 let text = format!("Muchas gracias por compartir tu idea {}", user);
@@ -211,7 +221,7 @@ Indicarte que `#idea`, `#pregunta`, `#comentario` no tienen que ir necesariament
                         send_message(chat_id, &text).await;
                     }
                 } else {
-                    match Feedback::new_from(&pool, "pregunta", "", &content, &name, &nick, 0).await{
+                    match Feedback::new_from(&pool, "pregunta", "", &content, &name, &nick, 0, "Telegram").await{
                         Ok(_) => {
                             if let Some(chat_id) = option_chat_id{
                                 let text = format!("Muchas gracias por tu pregunta {}", user);
@@ -242,7 +252,7 @@ Indicarte que `#idea`, `#pregunta`, `#comentario` no tienen que ir necesariament
                 };
 
                 if &comentario != ""{
-                    match Feedback::new_from(&pool, "comentario", &referencia, &comentario, &name, &nick, 0).await{
+                    match Feedback::new_from(&pool, "comentario", &referencia, &comentario, &name, &nick, 0, "Telegram").await{
                         Ok(_) => {
                             if let Some(chat_id) = option_chat_id{
                                 let text = format!("Muchas gracias por tu comentario {}", user);
