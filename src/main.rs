@@ -16,6 +16,7 @@ async fn main() -> std::io::Result<()> {
 
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL not set");
     let port = env::var("PORT").expect("PORT not set");
+    let token = env::var("TOKEN").expect("TOKEN not set");
 
     if !sqlx::Sqlite::database_exists(&db_url).await.unwrap(){
         sqlx::Sqlite::create_database(&db_url).await.unwrap()

@@ -4,6 +4,8 @@ use actix_web::{get, post, put, delete, web, Error, HttpResponse, http::StatusCo
 use serde::Serialize;
 use serde_json::{Value, json};
 use sqlx::sqlite::SqlitePool;
+use std::env;
+use reqwest::header::AUTHORIZATION;
 
 use crate::{feedback::Feedback, message::{check_key, get_user, check_comment,
     command, get_chat_id}, telegram::send_message};
@@ -37,14 +39,23 @@ impl Respuesta {
 
 }
 
-
 #[get("/")]
-pub async fn root() -> Result<HttpResponse, Error>{
+pub async fn root(req: HttpRequest) -> Result<HttpResponse, Error>{
+    let token = format!("Bearer {}", env::var("TOKEN").expect("TOKEN not set"));
+    if !req.headers().contains_key(AUTHORIZATION) || 
+            req.headers().get(AUTHORIZATION).unwrap().to_str().unwrap() != token{
+        return Respuesta::simple(401, "Unauthorized");
+    }
     Respuesta::simple(200, "Rust es lo mejor!")
 }
 
 #[get("/feedback")]
 pub async fn get_all_feedback(req: HttpRequest, pool: web::Data<SqlitePool>) -> Result<HttpResponse, Error>{
+    let token = format!("Bearer {}", env::var("TOKEN").expect("TOKEN not set"));
+    if !req.headers().contains_key(AUTHORIZATION) || 
+            req.headers().get(AUTHORIZATION).unwrap().to_str().unwrap() != token{
+        return Respuesta::simple(401, "Unauthorized");
+    }
     Feedback::read_all(pool)
         .await
         .map(|some_notes| HttpResponse::Ok().json(some_notes))
@@ -54,6 +65,11 @@ pub async fn get_all_feedback(req: HttpRequest, pool: web::Data<SqlitePool>) -> 
 #[get("/feedback/{id}")]
 pub async fn read_one_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
         path_id: web::Path<i64>) -> Result<HttpResponse, Error>{
+    let token = format!("Bearer {}", env::var("TOKEN").expect("TOKEN not set"));
+    if !req.headers().contains_key(AUTHORIZATION) || 
+            req.headers().get(AUTHORIZATION).unwrap().to_str().unwrap() != token{
+        return Respuesta::simple(401, "Unauthorized");
+    }
     let id = path_id.into_inner();
     match Feedback::read(&pool, id).await{
         Ok(feedback) => Respuesta::new(200,serde_json::to_value(feedback).unwrap()),
@@ -64,6 +80,11 @@ pub async fn read_one_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
 #[delete("/feedback/{id}")]
 pub async fn delete_one_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
         path_id: web::Path<i64>) -> Result<HttpResponse, Error>{
+    let token = format!("Bearer {}", env::var("TOKEN").expect("TOKEN not set"));
+    if !req.headers().contains_key(AUTHORIZATION) || 
+            req.headers().get(AUTHORIZATION).unwrap().to_str().unwrap() != token{
+        return Respuesta::simple(401, "Unauthorized");
+    }
     let id = path_id.into_inner();
     match Feedback::read(&pool, id).await{
         Ok(feedback) => {
@@ -77,6 +98,11 @@ pub async fn delete_one_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
 #[put("/feedback/{id}")]
 pub async fn update_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
         path_id: web::Path<i64>, post: String) -> Result<HttpResponse, Error>{
+    let token = format!("Bearer {}", env::var("TOKEN").expect("TOKEN not set"));
+    if !req.headers().contains_key(AUTHORIZATION) || 
+            req.headers().get(AUTHORIZATION).unwrap().to_str().unwrap() != token{
+        return Respuesta::simple(401, "Unauthorized");
+    }
     let id = path_id.into_inner();
     let mut post_content: Value = serde_json::from_str(&post).unwrap();
     let category = match post_content.get_mut("category") {
@@ -118,6 +144,11 @@ pub async fn update_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
 #[post("/feedback")]
 pub async fn create_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
         post: String) -> Result<HttpResponse, Error>{
+    let token = format!("Bearer {}", env::var("TOKEN").expect("TOKEN not set"));
+    if !req.headers().contains_key(AUTHORIZATION) || 
+            req.headers().get(AUTHORIZATION).unwrap().to_str().unwrap() != token{
+        return Respuesta::simple(401, "Unauthorized");
+    }
     let mut post_content: Value = serde_json::from_str(&post).unwrap();
     let category = match post_content.get_mut("category") {
         Some(value) => value.as_str().unwrap().to_string(),
@@ -156,7 +187,12 @@ pub async fn create_feedback(req: HttpRequest, pool: web::Data<SqlitePool>,
 }
 
 #[get("/status")]
-pub async fn status() -> Result<HttpResponse, Error>{
+pub async fn status(req: HttpRequest) -> Result<HttpResponse, Error>{
+    let token = format!("Bearer {}", env::var("TOKEN").expect("TOKEN not set"));
+    if !req.headers().contains_key(AUTHORIZATION) || 
+            req.headers().get(AUTHORIZATION).unwrap().to_str().unwrap() != token{
+        return Respuesta::simple(401, "Unauthorized");
+    }
     Respuesta::simple(200, "Up and running")
 }
 
