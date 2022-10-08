@@ -8,9 +8,10 @@ use dotenv::dotenv;
 use std::{env, collections::HashMap};
 use std::path::Path;
 use sqlx::{sqlite::SqlitePoolOptions, migrate::{Migrator, MigrateDatabase}};
-use actix_web::{App, HttpServer, web::Data};
+use actix_web::{App, HttpServer, web::Data, middleware::Logger};
 use routes::{root, status, hook, get_all_feedback, read_one_feedback, create_feedback, update_feedback};
 use mattermost::Mattermost;
+use env_logger::Env;
 
 #[derive(Debug, Clone)]
 pub struct Channels{
@@ -66,8 +67,12 @@ async fn main() -> std::io::Result<()> {
         mencion: mattermost.get_channel_by_name("atareao_mencion").await.unwrap(),
     };
 
+    env_logger::init_from_env(Env::default().default_filter_or("info"));
+
     HttpServer::new(move ||{
         App::new()
+            .wrap(Logger::default())
+            .wrap(Logger::new("%a %{User-Agent}i"))
             .app_data(Data::new(pool.clone()))
             .app_data(Data::new(mattermost.clone()))
             .app_data(Data::new(channels.clone()))
