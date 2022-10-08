@@ -8,7 +8,7 @@ use std::env;
 use reqwest::header::AUTHORIZATION;
 
 use crate::{feedback::Feedback, message::{check_key, get_user, check_comment,
-    command, get_chat_id}, telegram::send_message};
+    command, get_chat_id}, telegram::send_message, mattermost::Mattermost, Channels};
 
 #[derive(Serialize)]
 struct Respuesta{
@@ -197,8 +197,11 @@ pub async fn status(req: HttpRequest) -> Result<HttpResponse, Error>{
 }
 
 #[post("/hook")]
-pub async fn hook(req: HttpRequest, pool: web::Data<SqlitePool>, post: String) -> Result<HttpResponse, Error>{
+pub async fn hook(req: HttpRequest, pool: web::Data<SqlitePool>, channels: web::Data<Channels>, post: String) -> Result<HttpResponse, Error>{
     println!("{}", post);
+    let mattermost_base_uri = env::var("MATTERMOST_BASE_URI").expect("Not found Mattermost Base Uri");
+    let mattermost_token = env::var("MATTERMOST_ACCESS_TOKEN").expect("Not found Mattermost token");
+    let mattermost = Mattermost::new(&mattermost_base_uri, &mattermost_token);
     let mut content: Value = serde_json::from_str(&post).unwrap();
     if let Some(message) = content.get_mut("message"){
         let (name, nick) = get_user(message);
@@ -235,6 +238,7 @@ Indicarte que `#idea`, `#pregunta`, `#comentario` no tienen que ir necesariament
                             if let Some(chat_id) = option_chat_id{
                                 let text = format!("Muchas gracias por compartir tu idea {}", user);
                                 send_message(chat_id, &text).await;
+                                mattermost.post_message(&channels.idea, &text, None).await.unwrap();
                             }
                         },
                         Err(_) => {
@@ -262,6 +266,7 @@ Indicarte que `#idea`, `#pregunta`, `#comentario` no tienen que ir necesariament
                             if let Some(chat_id) = option_chat_id{
                                 let text = format!("Muchas gracias por tu pregunta {}", user);
                                 send_message(chat_id, &text).await;
+                                mattermost.post_message(&channels.pregunta, &text, None).await.unwrap();
                             }
                         },
                         Err(_) => {
@@ -293,6 +298,7 @@ Indicarte que `#idea`, `#pregunta`, `#comentario` no tienen que ir necesariament
                             if let Some(chat_id) = option_chat_id{
                                 let text = format!("Muchas gracias por tu comentario {}", user);
                                 send_message(chat_id, &text).await;
+                                mattermost.post_message(&channels.comentario, &text, None).await.unwrap();
                             }
                         },
                         Err(_) => {

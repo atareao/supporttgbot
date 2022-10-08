@@ -1,17 +1,19 @@
-GET https://attgsup.territoriolinux.es/
+GET https://{{BASE_URI}}/
+Authorization: Bearer {{TOKEN}}
 
-GET https://attgsup.territoriolinux.es/feedback
+GET https://{{BASE_URI}}/feedback
+Authorization: Bearer {{TOKEN}}
 
-GET https://attgsup.territoriolinux.es/status
+GET https://{{BASE_URI}}/status Authorization: Bearer {{TOKEN}}
 
-POST https://attgsup.territoriolinux.es/hook
+POST https://{{BASE_URI}}/hook
 Content-Type: application/json
 
 {
     "messrge": "nada"
 }
 
-PUT https://attgsup.territoriolinux.es/feedback/2
+PUT https://{{BASE_URI}}/feedback/2
 Content-Type: application/json
 
 {
@@ -19,7 +21,7 @@ Content-Type: application/json
     "content": "vacio"
 }
 
-POST https://attgsup.territoriolinux.es/feedback
+POST https://{{BASE_URI}}/feedback
 Content-Type: application/json
 
 {
@@ -27,8 +29,8 @@ Content-Type: application/json
     "content": "vacio"
 }
 
-POST http://localhost:8080/feedback
-Authorization: Bearer XXXXX
+POST http://{{BASE_URI}}/feedback
+Authorization: Bearer {{TOKEN}}
 Content-Type: application/json
 
 {
@@ -36,12 +38,12 @@ Content-Type: application/json
     "content": "este"
 }
 
-GET http://localhost:8080/feedback/3
-Authorization: Bearer XXXXX
+GET http://{{BASE_URI}}/feedback/3
+Authorization: Bearer {{TOKEN}}
 Content-Type: application/json
 
-PUT http://localhost:8080/feedback/3
-Authorization: Bearer XXXXX
+PUT http://{{BASE_URI}}/feedback/3
+Authorization: Bearer {{TOKEN}}
 Content-Type: application/json
 
 {
@@ -49,12 +51,16 @@ Content-Type: application/json
     "content": "o este"
 }
 
-GET http://localhost:8080/feedback
-Authorization: Bearer XXXXX
+GET http://{{BASE_URI}}/feedback
+Authorization: Bearer {{TOKEN}}
 Content-Type: application/json
 
-GET http://localhost:8080/feedback/8
+GET http://{{BASE_URI}}/feedback/8
 Content-Type: application/json
 
-GET http://localhost:8080/feedback
-Authorization: Bearer XXXXX
+GET https://{{BASE_URI}}/feedback
+Authorization: Bearer {{TOKEN}}
+
+GET https://{{BASE_URI}}/
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
