@@ -238,7 +238,7 @@ Indicarte que `#idea`, `#pregunta`, `#comentario` no tienen que ir necesariament
                             if let Some(chat_id) = option_chat_id{
                                 let text = format!("Muchas gracias por compartir tu idea {}", user);
                                 send_message(chat_id, &text).await;
-                                mattermost.post_message(&channels.idea, &text, None).await.unwrap();
+                                mattermost.post_message(&channels.idea, &content, None).await.unwrap();
                             }
                         },
                         Err(_) => {
@@ -266,7 +266,7 @@ Indicarte que `#idea`, `#pregunta`, `#comentario` no tienen que ir necesariament
                             if let Some(chat_id) = option_chat_id{
                                 let text = format!("Muchas gracias por tu pregunta {}", user);
                                 send_message(chat_id, &text).await;
-                                mattermost.post_message(&channels.pregunta, &text, None).await.unwrap();
+                                mattermost.post_message(&channels.pregunta, &content, None).await.unwrap();
                             }
                         },
                         Err(_) => {
@@ -298,7 +298,7 @@ Indicarte que `#idea`, `#pregunta`, `#comentario` no tienen que ir necesariament
                             if let Some(chat_id) = option_chat_id{
                                 let text = format!("Muchas gracias por tu comentario {}", user);
                                 send_message(chat_id, &text).await;
-                                mattermost.post_message(&channels.comentario, &text, None).await.unwrap();
+                                mattermost.post_message(&channels.comentario, &comentario, None).await.unwrap();
                             }
                         },
                         Err(_) => {
