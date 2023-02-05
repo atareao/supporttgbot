@@ -42,7 +42,6 @@ RUN apk add --update --no-cache \
             tzdata~=2022c-r0 && \
     rm -rf /var/cache/apk && \
     rm -rf /var/lib/app/lists*
-# Copy the user
 
 # Set the work dir
 WORKDIR /app
