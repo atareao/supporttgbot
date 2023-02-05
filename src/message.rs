@@ -65,6 +65,13 @@ pub fn get_user(message: &mut Value) -> (String, String){
     (name, nick)
 }
 
+pub fn get_message_thread_id(message: &mut Value) -> Option<i64>{
+    if let Some(message_thread_id) = message.get_mut("message_thread_id"){
+        return Some(message_thread_id.as_i64().unwrap())
+    }
+    None
+}
+
 pub fn get_chat_id(message: &mut Value) -> Option<i64>{
     if let Some(chat) = message.get_mut("chat"){
         if let Some(id) = chat.get_mut("id"){

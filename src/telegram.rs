@@ -5,23 +5,25 @@ use std::env;
 #[derive(Debug, Serialize, Deserialize)]
 struct Message{
     chat_id: i64,
+    message_thread_id: i64,
     text: String,
 
 }
 
 impl Message {
-    fn new(chat_id: i64, text: &str) -> Self{
+    fn new(chat_id: i64, message_thread_id: i64, text: &str) -> Self{
         Message{
             chat_id,
+            message_thread_id,
             text: text.to_string(),
         }
     }
 }
 
-pub async fn send_message(chat_id: i64, text: &str) -> Option<String>{
+pub async fn send_message(chat_id: i64, message_thread_id: Option<i64>, text: &str) -> Option<String>{
     let token = env::var("TG_TOKEN").expect("TG_TOKEN not set");
     let url = format!("https://api.telegram.org/bot{}/sendMessage", token);
-    let message = Message::new(chat_id, text);
+    let message = Message::new(chat_id, message_thread_id.unwrap(), text);
     println!("{}", serde_json::to_string(&message).unwrap());
     match Client::new()
         .post(url)
