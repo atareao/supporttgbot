@@ -27,7 +27,6 @@ async fn main() -> std::io::Result<()> {
 
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL not set");
     let port = env::var("PORT").expect("PORT not set");
-    let token = env::var("TOKEN").expect("TOKEN not set");
     let mattermost_base_uri = env::var("MATTERMOST_BASE_URI").expect("Not found Mattermost Base Uri");
     let mattermost_token = env::var("MATTERMOST_ACCESS_TOKEN").expect("Not found Mattermost token");
     let mattermost = Mattermost::new(&mattermost_base_uri, &mattermost_token);
