@@ -3,6 +3,7 @@ mod feedback;
 mod routes;
 mod telegram;
 mod mattermost;
+mod zinc;
 
 use dotenv::dotenv;
 use std::{env, collections::HashMap};
@@ -11,6 +12,7 @@ use sqlx::{sqlite::SqlitePoolOptions, migrate::{Migrator, MigrateDatabase}};
 use actix_web::{App, HttpServer, web::Data, middleware::Logger};
 use routes::{root, status, hook, get_all_feedback, read_one_feedback, create_feedback, update_feedback};
 use mattermost::Mattermost;
+use zinc::Zinc;
 use env_logger::Env;
 
 #[derive(Debug, Clone)]
@@ -30,6 +32,10 @@ async fn main() -> std::io::Result<()> {
     let mattermost_base_uri = env::var("MATTERMOST_BASE_URI").expect("Not found Mattermost Base Uri");
     let mattermost_token = env::var("MATTERMOST_ACCESS_TOKEN").expect("Not found Mattermost token");
     let mattermost = Mattermost::new(&mattermost_base_uri, &mattermost_token);
+    let zinc_base_url = env::var("ZINC_BASE_URL").expect("Not found zinc base url");
+    let zinc_indice = env::var("ZINC_INDICE").expect("Not found zinc indice");
+    let zinc_token = env::var("ZINC_TOKEN").expect("Not found token");
+    let zinc = Zinc::new(&zinc_base_url, &zinc_indice, &zinc_token);
 
     if !sqlx::Sqlite::database_exists(&db_url).await.unwrap(){
         sqlx::Sqlite::create_database(&db_url).await.unwrap()
@@ -75,6 +81,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(pool.clone()))
             .app_data(Data::new(mattermost.clone()))
             .app_data(Data::new(channels.clone()))
+            .app_data(Data::new(zinc.clone()))
             .service(root)
             .service(status)
             .service(get_all_feedback)

@@ -19,6 +19,7 @@ use crate::{
     },
     telegram::send_message,
     mattermost::Mattermost,
+    zinc::Zinc,
     Channels
 };
 
@@ -210,10 +211,18 @@ pub async fn status(req: HttpRequest) -> Result<HttpResponse, Error>{
 
 #[post("/hook")]
 pub async fn hook(req: HttpRequest, pool: web::Data<SqlitePool>, channels: web::Data<Channels>, post: String) -> Result<HttpResponse, Error>{
-    println!("{}", post);
     let mattermost_base_uri = env::var("MATTERMOST_BASE_URI").expect("Not found Mattermost Base Uri");
     let mattermost_token = env::var("MATTERMOST_ACCESS_TOKEN").expect("Not found Mattermost token");
     let mattermost = Mattermost::new(&mattermost_base_uri, &mattermost_token);
+    let zinc_base_url = env::var("ZINC_BASE_URL").expect("Not found zinc base url");
+    let zinc_indice = env::var("ZINC_INDICE").expect("Not found zinc indice");
+    let zinc_token = env::var("ZINC_TOKEN").expect("Not found token");
+    let zinc = Zinc::new(&zinc_base_url, &zinc_indice, &zinc_token);
+    zinc.publish(&json!([{
+        "src": "Telegram",
+        "type": "webhook",
+        "post": &post,
+    }])).await.unwrap();
     let mut content: Value = serde_json::from_str(&post).unwrap();
     if let Some(message) = content.get_mut("message"){
         let (name, nick) = get_user(message);
@@ -252,6 +261,12 @@ Indicarte que `#idea`, `#pregunta`, `#comentario` no tienen que ir necesariament
                                 let text = format!("Muchas gracias por compartir tu idea {}", user);
                                 send_message(chat_id, message_thread_id, &text).await;
                                 mattermost.post_message(&channels.idea, &content, None).await.unwrap();
+                                zinc.publish(&json!([{
+                                    "src": "Telegram",
+                                    "type": "idea",
+                                    "from": &user,
+                                    "message": &content,
+                                }])).await.unwrap();
                             }
                         },
                         Err(_) => {
@@ -280,6 +295,12 @@ Indicarte que `#idea`, `#pregunta`, `#comentario` no tienen que ir necesariament
                                 let text = format!("Muchas gracias por tu pregunta {}", user);
                                 send_message(chat_id, message_thread_id, &text).await;
                                 mattermost.post_message(&channels.pregunta, &content, None).await.unwrap();
+                                zinc.publish(&json!([{
+                                    "src": "Telegram",
+                                    "type": "pregunta",
+                                    "from": &user,
+                                    "message": &content,
+                                }])).await.unwrap();
                             }
                         },
                         Err(_) => {
@@ -312,6 +333,12 @@ Indicarte que `#idea`, `#pregunta`, `#comentario` no tienen que ir necesariament
                                 let text = format!("Muchas gracias por tu comentario {}", user);
                                 send_message(chat_id, message_thread_id, &text).await;
                                 mattermost.post_message(&channels.comentario, &comentario, None).await.unwrap();
+                                zinc.publish(&json!([{
+                                    "src": "Telegram",
+                                    "type": "pregunta",
+                                    "from": &user,
+                                    "message": &content,
+                                }])).await.unwrap();
                             }
                         },
                         Err(_) => {
